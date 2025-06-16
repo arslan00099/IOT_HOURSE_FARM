@@ -41,7 +41,7 @@ $result = $stmt->get_result();
 
 // DEBUG: Check if any horses returned
 if ($result->num_rows === 0) {
-    echo "<p>⚠️ No horses found for this user (user_id = $user_id).</p>";
+   // echo "<p>⚠️ No horses found for this user (user_id = $user_id).</p>";
 }
 
 $horseQuery = "SELECT id, name FROM horses WHERE user_id = ?";
