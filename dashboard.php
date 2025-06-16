@@ -60,6 +60,8 @@ $horseResult = $horseStmt->get_result();
     <title>Ostler Horse Monitoring - Dashboard</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <script src="https://unpkg.com/mqtt/dist/mqtt.min.js"></script>
+
     <style>
         .sidebar {
             background: linear-gradient(180deg, #2c6e4a 0%, #1a4c33 100%);
@@ -232,7 +234,7 @@ function closeModal(id) {
             </div>
             <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-4 flex space-x-4">
                 <button id="see-button"
-                    class="btn-primary py-2 px-6 text-white font-medium rounded-lg flex items-center text-lg"
+                    class="btn-primary py-2 px-6 text-black font-medium rounded-lg flex items-center text-lg"
                     onclick="switchView('see-view')">
                     <i class="fas fa-video mr-2"></i> See
                 </button>
@@ -277,99 +279,79 @@ function closeModal(id) {
 
 
 
-            <!-- Feed View (Hidden by default) -->
-            <div id="feed-view" class="hidden">
-                <div class="bg-white rounded-lg shadow divide-y divide-gray-200">
-                    <!-- Horse Feed Item -->
-                    <div class="horse-feed-item p-4 flex items-center justify-between">
-                        <div class="flex items-center">
-                            <img class="h-12 w-12 rounded-full bg-gray-100" src="https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRrS6514iwkcQ1w23L_QoxQSz9xNI_SKkC84A&s"
-                                alt="Horse Avatar">
-                            <div class="ml-4">
-                                <h3 class="text-lg font-medium text-gray-900">Thunder</h3>
-                                <div class="flex items-center mt-1">
-                                    <span
-                                        class="feed-counter inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
-                                        <i class="fas fa-utensils mr-1 text-green-600"></i>
-                                        <span class="feed-count">3</span> feeds today
-                                    </span>
-                                    <span class="ml-2 text-sm text-gray-500">Last feed: 2h ago</span>
-                                </div>
+           <!-- Feed View (Hidden by default) -->
+<div id="feed-view" class="hidden">
+    <div id="horse-feed-list" class="bg-white rounded-lg shadow divide-y divide-gray-200">
+        <!-- Horse Feed Items will be inserted here -->
+    </div>
+</div>
+<script>
+function loadFeedView() {
+    fetch('get_feed_data.php')
+        .then(response => response.json())
+        .then(data => {
+            if (!data.success) return alert('Failed to load feed data');
+            
+            const container = document.getElementById('horse-feed-list');
+            container.innerHTML = ''; // Clear previous data
+
+            data.horses.forEach(horse => {
+                const feedTime = horse.last_feed_time 
+                    ? timeAgo(new Date(horse.last_feed_time)) 
+                    : 'Never';
+
+                // Determine button style based on feeder type
+                const isManual = horse.feeder_type === 'manual';
+                const buttonClasses = isManual 
+                    ? 'feed-now-btn bg-green-600 hover:bg-green-700 px-4 py-2 text-white rounded-lg'
+                    : 'feed-now-btn bg-gray-400 cursor-not-allowed px-4 py-2 text-white rounded-lg';
+                const buttonDisabled = isManual 
+                    ? `onclick="showFeedConfirmation('${horse.name}', ${horse.id})"`
+                    : 'disabled';
+
+                container.innerHTML += `
+                <div class="horse-feed-item p-4 flex items-center justify-between">
+                    <div class="flex items-center">
+                        <img class="h-12 w-12 rounded-full bg-gray-100 object-cover" src="${horse.image}" alt="${horse.name}">
+                        <div class="ml-4">
+                            <h3 class="text-lg font-medium text-gray-900">${horse.name}</h3>
+                            <p class="text-sm text-gray-500">Feeder: <strong>${horse.feeder_type}</strong></p>
+                            <div class="flex items-center mt-1">
+                                <span class="feed-counter inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                                    <i class="fas fa-utensils mr-1 text-green-600"></i>
+                                    <span class="feed-count">${horse.feed_count}</span> feeds today
+                                </span>
+                                <span class="ml-2 text-sm text-gray-500">Last feed: ${feedTime}</span>
                             </div>
                         </div>
-                        <button class="feed-now-btn btn-primary px-4 py-2 text-white rounded-lg" data-horse="Thunder"
-                            onclick="showFeedConfirmation('Thunder')">
-                            Feed Now
-                        </button>
                     </div>
+                    <button class="${buttonClasses}" ${buttonDisabled}>
+                        Feed Now
+                    </button>
+                </div>`;
+            });
+        });
+}
 
-                    <!-- <div class="horse-feed-item p-4 flex items-center justify-between">
-                        <div class="flex items-center">
-                            <img class="h-12 w-12 rounded-full bg-gray-100" src="/api/placeholder/60/60"
-                                alt="Horse Avatar">
-                            <div class="ml-4">
-                                <h3 class="text-lg font-medium text-gray-900">Storm</h3>
-                                <div class="flex items-center mt-1">
-                                    <span
-                                        class="feed-counter inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
-                                        <i class="fas fa-utensils mr-1 text-green-600"></i>
-                                        <span class="feed-count">2</span> feeds today
-                                    </span>
-                                    <span class="ml-2 text-sm text-gray-500">Last feed: 4h ago</span>
-                                </div>
-                            </div>
-                        </div>
-                        <button class="feed-now-btn btn-primary px-4 py-2 text-white rounded-lg" data-horse="Storm"
-                            onclick="showFeedConfirmation('Storm')">
-                            Feed Now
-                        </button>
-                    </div> -->
 
-                    <!-- <div class="horse-feed-item p-4 flex items-center justify-between">
-                        <div class="flex items-center">
-                            <img class="h-12 w-12 rounded-full bg-gray-100" src="/api/placeholder/60/60"
-                                alt="Horse Avatar">
-                            <div class="ml-4">
-                                <h3 class="text-lg font-medium text-gray-900">Shadow</h3>
-                                <div class="flex items-center mt-1">
-                                    <span
-                                        class="feed-counter inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
-                                        <i class="fas fa-utensils mr-1 text-green-600"></i>
-                                        <span class="feed-count">1</span> feeds today
-                                    </span>
-                                    <span class="ml-2 text-sm text-gray-500">Last feed: 8h ago</span>
-                                </div>
-                            </div>
-                        </div>
-                        <button class="feed-now-btn btn-primary px-4 py-2 text-white rounded-lg" data-horse="Shadow"
-                            onclick="showFeedConfirmation('Shadow')">
-                            Feed Now
-                        </button>
-                    </div> -->
-<!-- 
-                    <div class="horse-feed-item p-4 flex items-center justify-between">
-                        <div class="flex items-center">
-                            <img class="h-12 w-12 rounded-full bg-gray-100" src="/api/placeholder/60/60"
-                                alt="Horse Avatar">
-                            <div class="ml-4">
-                                <h3 class="text-lg font-medium text-gray-900">Misty</h3>
-                                <div class="flex items-center mt-1">
-                                    <span
-                                        class="feed-counter inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
-                                        <i class="fas fa-utensils mr-1 text-green-600"></i>
-                                        <span class="feed-count">3</span> feeds today
-                                    </span>
-                                    <span class="ml-2 text-sm text-gray-500">Last feed: 3h ago</span>
-                                </div>
-                            </div>
-                        </div>
-                        <button class="feed-now-btn btn-primary px-4 py-2 text-white rounded-lg" data-horse="Misty"
-                            onclick="showFeedConfirmation('Misty')">
-                            Feed Now
-                        </button>
-                    </div> -->
-                </div>
-            </div>
+// Optional: Format last feed time
+function timeAgo(date) {
+    const seconds = Math.floor((new Date() - date) / 1000);
+    if (seconds < 60) return `${seconds} seconds ago`;
+    const minutes = Math.floor(seconds / 60);
+    if (minutes < 60) return `${minutes} minutes ago`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} hours ago`;
+    const days = Math.floor(hours / 24);
+    return `${days} days ago`;
+}
+
+// Call it when feed view is shown
+// Example: when switching tabs or clicking a nav item
+document.getElementById('feed-view').classList.remove('hidden');
+
+</script>
+
         </main>
     </div>
 
@@ -417,6 +399,8 @@ function closeModal(id) {
                 <h3 class="text-xl font-bold text-center mb-2">Feed <span id="feed-horse-name">Horse</span>?</h3>
                 <p class="text-gray-600 text-center mb-6">Are you sure you want to send a feed request for <span
                         id="feed-horse-name-2">Horse</span>?</p>
+                        <input type="number" id="feed-weight" placeholder="Enter feed weight (kg)" 
+       class="mt-2 w-full border rounded px-3 py-2" min="1">
                 <div class="flex justify-center space-x-4">
                     <button class="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50"
                         onclick="closeModal('feed-confirmation-modal')">
@@ -759,6 +743,7 @@ document.querySelector('#edit-horse-modal button.btn-primary').addEventListener(
                 feedButton.classList.remove('bg-white', 'text-gray-700', 'border', 'border-gray-300', 'hover:bg-gray-50');
                 seeButton.classList.remove('btn-primary');
                 seeButton.classList.add('bg-white', 'text-gray-700', 'border', 'border-gray-300', 'hover:bg-gray-50');
+           loadFeedView();
             }
         }
 
@@ -787,32 +772,65 @@ document.querySelector('#edit-horse-modal button.btn-primary').addEventListener(
             document.getElementById('feed-horse-name-2').innerText = horseName;
             showModal('feed-confirmation-modal');
         }
+//////////////////////////////////////////////////
+let selectedHorseId = null;
+let selectedHorseName = null;
+
+// ✅ Connect to MQTT (WebSocket port 9001 must be enabled on your broker)
+const mqttClient = mqtt.connect("ws://51.21.200.222:9001");
+
+mqttClient.on("connect", () => {
+    console.log("✅ Connected to MQTT WebSocket broker");
+});
+
+mqttClient.on("error", err => {
+    console.error("❌ MQTT connection error", err);
+});
+
+// ✅ Open Feed Confirmation Modal
+function showFeedConfirmation(horseName, horseId) {
+    selectedHorseId = horseId;
+    selectedHorseName = horseName;
+
+    document.getElementById('feed-horse-name').textContent = horseName;
+    document.getElementById('feed-horse-name-2').textContent = horseName;
+    document.getElementById('feed-confirmation-modal').classList.remove('hidden');
+}
 
         // Feed horse
-        function feedHorse() {
-            const horseName = document.getElementById('feed-horse-name').innerText;
-            const horseItem = Array.from(document.querySelectorAll('.horse-feed-item')).find(item =>
-                item.querySelector('h3').innerText === horseName
-            );
+       function feedHorse() {
+    const weight = document.getElementById('feed-weight').value;
+    if (!weight || weight <= 0) {
+        alert("Please enter a valid feed weight.");
+        return;
+    }
 
-            if (horseItem) {
-                const feedCountEl = horseItem.querySelector('.feed-count');
-                const currentCount = parseInt(feedCountEl.innerText);
-                feedCountEl.innerText = currentCount + 1;
-            }
+    const payload = {
+        action: "feed",
+        horse_id: selectedHorseId,
+        horse_name: selectedHorseName,
+        weight: weight,
+        timestamp: new Date().toISOString()
+    };
+  const YOUR_USER_ID = <?php echo $_SESSION['user_id']; ?>;
+    const topic = `user_${YOUR_USER_ID}`; // Replace with actual userId from session or server
 
+    mqttClient.publish(topic, JSON.stringify(payload), (err) => {
+        if (err) {
+            console.error("❌ Failed to publish MQTT message:", err);
+        } else {
+            console.log("✅ Feed message sent:", payload);
+            alert("Feed request sent!");
             closeModal('feed-confirmation-modal');
-
-            // Show success notification
-            const notification = document.createElement('div');
-            notification.className = 'fixed bottom-4 right-4 bg-green-500 text-white px-4 py-2 rounded-lg shadow-lg';
-            notification.innerHTML = `<i class="fas fa-check-circle mr-2"></i> ${horseName} has been fed!`;
-            document.body.appendChild(notification);
-
-            setTimeout(() => {
-                notification.remove();
-            }, 3000);
+            loadFeedView(); // Refresh counts
         }
+    });
+}
+
+// ✅ Close modal
+function closeModal(modalId) {
+    document.getElementById(modalId).classList.add('hidden');
+}
     </script>
 </body>
 
