@@ -309,26 +309,30 @@ function loadFeedView() {
                     ? `onclick="showFeedConfirmation('${horse.name}', ${horse.id})"`
                     : 'disabled';
 
-                container.innerHTML += `
-                <div class="horse-feed-item p-4 flex items-center justify-between">
-                    <div class="flex items-center">
-                        <img class="h-12 w-12 rounded-full bg-gray-100 object-cover" src="${horse.image}" alt="${horse.name}">
-                        <div class="ml-4">
-                            <h3 class="text-lg font-medium text-gray-900">${horse.name}</h3>
-                            <p class="text-sm text-gray-500">Feeder: <strong>${horse.feeder_type}</strong></p>
-                            <div class="flex items-center mt-1">
-                                <span class="feed-counter inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
-                                    <i class="fas fa-utensils mr-1 text-green-600"></i>
-                                    <span class="feed-count">${horse.feed_count}</span> feeds today
-                                </span>
-                                <span class="ml-2 text-sm text-gray-500">Last feed: ${feedTime}</span>
-                            </div>
-                        </div>
-                    </div>
-                    <button class="${buttonClasses}" ${buttonDisabled}>
-                        Feed Now
-                    </button>
-                </div>`;
+              container.innerHTML += `
+    <div class="horse-feed-item p-4 flex items-center justify-between">
+        <div class="flex items-center">
+            <img class="h-12 w-12 rounded-full bg-gray-100 object-cover" src="${horse.image}" alt="${horse.name}">
+            <div class="ml-4">
+                <h3 class="text-lg font-medium text-gray-900">
+                    ${horse.name}
+                    <span class="ml-2 text-sm text-gray-400">#${horse.id}</span>
+                </h3>
+                <p class="text-sm text-gray-500">Feeder: <strong>${horse.feeder_type}</strong></p>
+                <div class="flex items-center mt-1">
+                    <span class="feed-counter inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-gray-100 text-gray-800">
+                        <i class="fas fa-utensils mr-1 text-green-600"></i>
+                        <span class="feed-count">${horse.feed_count}</span> feeds today
+                    </span>
+                    <span class="ml-2 text-sm text-gray-500">Last feed: ${feedTime}</span>
+                </div>
+            </div>
+        </div>
+        <button class="${buttonClasses}" ${buttonDisabled}>
+            Feed Now
+        </button>
+    </div>`;
+
             });
         });
 }
@@ -812,8 +816,8 @@ function showFeedConfirmation(horseName, horseId) {
         weight: weight,
         timestamp: new Date().toISOString()
     };
-  const YOUR_USER_ID = <?php echo $_SESSION['user_id']; ?>;
-    const topic = `user_${YOUR_USER_ID}`; // Replace with actual userId from session or server
+  const YOUR_USER_ID = "<?php echo $_SESSION['email']; ?>";
+    const topic = `feed/${YOUR_USER_ID}`; // Replace with actual userId from session or server
 
     mqttClient.publish(topic, JSON.stringify(payload), (err) => {
         if (err) {

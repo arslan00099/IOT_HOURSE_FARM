@@ -1,5 +1,5 @@
 <?php
-$host = '127.0.0.1';          // MySQL host (localhost if using host port 3306)
+$host = '51.21.200.222';          // MySQL host (localhost if using host port 3306)
 $port = 3306;                 // MySQL port
 $dbname = 'app_db';           // Your database name
 $username = 'app_user';       // MySQL username

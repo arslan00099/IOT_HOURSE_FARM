@@ -17,14 +17,17 @@ if ($_SERVER["REQUEST_METHOD"] == "POST") {
         $stmt->fetch();
 
         if (password_verify($password, $hashedPassword)) {
+            // ✅ Save both user ID and email in session
             $_SESSION['user_id'] = $id;
+            $_SESSION['email'] = $email;
+
             header("Location: dashboard.php");
-        exit();
+            exit();
         } else {
             echo "<script>alert('❌ Incorrect password!'); window.location.href='index.html';</script>";
         }
     } else {
-          echo "<script>alert('❌ Email not found!'); window.location.href='index.html';</script>";
+        echo "<script>alert('❌ Email not found!'); window.location.href='index.html';</script>";
     }
 
     $stmt->close();
